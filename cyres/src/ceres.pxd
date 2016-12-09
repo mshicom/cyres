@@ -391,6 +391,34 @@ cdef extern from "local_parameterization.h" namespace "ceres":
 
         LocalSize() const
 
+    cdef cppclass IdentityParameterization(LocalParameterization):
+        IdentityParameterization(int size)
+
+    cdef cppclass SubsetParameterization(LocalParameterization):
+        SubsetParameterization(int size, const vector[int]& constant_parameters)
+
+    cdef cppclass QuaternionParameterization(LocalParameterization):
+        pass
+
+    cdef cppclass EigenQuaternionParameterization(LocalParameterization):
+        pass
+
+    cdef cppclass HomogeneousVectorParameterization(LocalParameterization):
+        HomogeneousVectorParameterization(int size)
+
+    cdef cppclass ProductParameterization(LocalParameterization):
+        ProductParameterization(LocalParameterization* local_param1,
+                                LocalParameterization* local_param2)
+
+        ProductParameterization(LocalParameterization* local_param1,
+                                LocalParameterization* local_param2,
+                                LocalParameterization* local_param3)
+
+        ProductParameterization(LocalParameterization* local_param1,
+                                LocalParameterization* local_param2,
+                                LocalParameterization* local_param3,
+                                LocalParameterization* local_param4)
+
 cdef extern from "problem.h" namespace "ceres::internal":
 
     cdef cppclass Preprocessor:

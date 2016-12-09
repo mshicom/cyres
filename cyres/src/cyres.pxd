@@ -8,3 +8,6 @@ cdef class CostFunction:
 
 cdef class LossFunction:
     cdef ceres.LossFunction* _loss_function
+
+cdef class LocalParameterization:
+    cdef ceres.LocalParameterization* _local_parameterization

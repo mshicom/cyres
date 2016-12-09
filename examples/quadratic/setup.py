@@ -16,6 +16,8 @@ ext_modules = [
         language="c++",
         include_dirs=[ceres_include, numpy.get_include(), eigen_include],
         cython_include_dirs=[cyres.get_cython_include()],
+        extra_compile_args = ["-std=c++11"]
+
     )
 ]
 

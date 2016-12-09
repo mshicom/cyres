@@ -8,6 +8,7 @@ from cython.operator cimport dereference as drf
 cimport numpy as np
 
 import numpy as np
+np.import_array()
 
 cimport ceres
 from cyres cimport *
@@ -348,8 +349,124 @@ cdef class Problem:
         cdef double* _values = <double*> _tmp_array.data
         self._problem.SetParameterBlockVariable(_values)
 
+    cpdef add_parameter_block(self, block, LocalParameterization lp=None):
+        cdef np.ndarray _tmp_array = np.ascontiguousarray(block, dtype=np.double)
+        cdef double* _values = <double*> _tmp_array.data
+        if not lp is None:
+            self._problem.AddParameterBlock(_values, len(block))
+        else:
+            self._problem.AddParameterBlock(_values, len(block),
+                                            lp._local_parameterization)
+
+    cpdef set_parameterization(self, block, LocalParameterization lp):
+        cdef np.ndarray _tmp_array = np.ascontiguousarray(block, dtype=np.double)
+        cdef double* _values = <double*> _tmp_array.data
+        self._problem.SetParameterization(_values, lp._local_parameterization)
+
 cdef class ResidualBlockId:
     cdef ceres.ResidualBlockId _block_id
 
 def solve(SolverOptions options, Problem problem, Summary summary):
     ceres.Solve(drf(options._options), &problem._problem, &summary._summary)
+
+cdef class IdentityParameterization(LocalParameterization):
+    """ Identity Parameterization: Plus(x, delta) = x + delta"""
+    def __init__(self, int size):
+        self._local_parameterization = new ceres.IdentityParameterization(size)
+
+cdef class SubsetParameterization(LocalParameterization):
+    """ Hold a subset of the parameters inside a parameter block constant."""
+    def __init__(self, int size, list constant_parameters):
+
+        cdef vector[int] constant_parameters_
+        for index in constant_parameters:
+            constant_parameters_.push_back(<int?>(index))
+        self._local_parameterization =                                  \
+            new ceres.SubsetParameterization(size, constant_parameters_)
+
+cdef class QuaternionParameterization(LocalParameterization):
+    """
+    Plus(x, delta) = [cos(|delta|), sin(|delta|) delta / |delta|] * x
+    with * being the quaternion multiplication operator. Here we assume
+    that the first element of the quaternion vector is the real (cos
+    theta) part.
+    """
+    def __init__(self):
+        self._local_parameterization = new ceres.QuaternionParameterization()
+
+cdef class EigenQuaternionParameterization(LocalParameterization):
+    """
+    Implements the quaternion local parameterization for Eigen's representation
+    of the quaternion. Eigen uses a different internal memory layout for the
+    elements of the quaternion than what is commonly used. Specifically, Eigen
+    stores the elements in memory as [x, y, z, w] where the real part is last
+    whereas it is typically stored first. Note, when creating an Eigen quaternion
+    through the constructor the elements are accepted in w, x, y, z order. Since
+    Ceres operates on parameter blocks which are raw double pointers this
+    difference is important and requires a different parameterization.
+
+    Plus(x, delta) = [sin(|delta|) delta / |delta|, cos(|delta|)] * x
+    with * being the quaternion multiplication operator.
+    """
+    def __init__(self):
+        self._local_parameterization = new ceres.EigenQuaternionParameterization()
+
+cdef class HomogeneousVectorParameterization(LocalParameterization):
+    """
+    This provides a parameterization for homogeneous vectors which are commonly
+    used in Structure for Motion problems.  One example where they are used is
+    in representing points whose triangulation is ill-conditioned. Here
+    it is advantageous to use an over-parameterization since homogeneous vectors
+    can represent points at infinity.
+
+    The plus operator is defined as
+    Plus(x, delta) =
+       [sin(0.5 * |delta|) * delta / |delta|, cos(0.5 * |delta|)] * x
+    with * defined as an operator which applies the update orthogonal to x to
+    remain on the sphere. We assume that the last element of x is the scalar
+    component. The size of the homogeneous vector is required to be greater than
+    1.
+    """
+    def __init__(self, int size):
+        self._local_parameterization = new ceres.HomogeneousVectorParameterization(size)
+
+cdef class ProductParameterization(LocalParameterization):
+    """
+    Construct a local parameterization by taking the Cartesian product
+    of a number of other local parameterizations. This is useful, when
+    a parameter block is the cartesian product of two or more
+    manifolds. For example the parameters of a camera consist of a
+    rotation and a translation, i.e., SO(3) x R^3.
+
+    Currently this class supports taking the cartesian product of up to
+    four local parameterizations.
+
+    Example usage:
+
+    ProductParameterization product_param(new QuaterionionParameterization(),
+                                          new IdentityParameterization(3));
+
+    is the local parameterization for a rigid transformation, where the
+    rotation is represented using a quaternion.
+    """
+    def __init__(self, *args):
+        # TODO Sanity Check
+        if len(args)==2:
+            self._local_parameterization = new ceres.ProductParameterization(
+                (<LocalParameterization?>(args[0]))._local_parameterization,
+                (<LocalParameterization?>(args[1]))._local_parameterization)
+
+        elif len(args)==3:
+            self._local_parameterization = new ceres.ProductParameterization(
+                (<LocalParameterization?>(args[0]))._local_parameterization,
+                (<LocalParameterization?>(args[1]))._local_parameterization,
+                (<LocalParameterization?>(args[2]))._local_parameterization)
+
+        elif len(args)==4:
+            self._local_parameterization = new ceres.ProductParameterization(
+                (<LocalParameterization?>(args[0]))._local_parameterization,
+                (<LocalParameterization?>(args[1]))._local_parameterization,
+                (<LocalParameterization?>(args[2]))._local_parameterization,
+                (<LocalParameterization?>(args[3]))._local_parameterization)
+        else:
+            raise RuntimeError("number of sub parameterization should within 2~4.")
