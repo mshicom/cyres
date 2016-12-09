@@ -35,19 +35,12 @@ def has_openmp():
 
     return result == 0
 
-ceres_include = "/usr/local/include/ceres/"
 
-ceres_lib = "/usr/local/lib/"
-gflags_lib = "/usr/local/lib/"
-glog_lib = "/usr/local/lib/"
-cholmod_lib = amd_lib = camd_lib = colamd_lib = "/usr/local/lib/"
-cxsparse_lib = "/usr/local/lib/"
-
-extra_compile_args = ['-O3']
+extra_compile_args = ['-O3','-std=c++11','-Wunused']
 extra_link_args = []
 
 if has_openmp():
-    extra_compile_args = ['-fopenmp','-std=c++11','-Wunused']
+    extra_compile_args = ['-fopenmp']
     extra_link_args = ['-lgomp']
 
 ext_modules = [
@@ -55,9 +48,9 @@ ext_modules = [
         "cyres",
         ["cyres/src/cyres.pyx", "cyres/src/cyres.pxd", "cyres/src/ceres.pxd"],
         language="c++",
-        include_dirs=[ceres_include, numpy.get_include()],
-        libraries=['ceres', 'gflags', 'glog', "cholmod", "camd", "amd", "colamd", "cxsparse"],
-        library_dirs=[ceres_lib, gflags_lib, glog_lib, cholmod_lib, amd_lib, camd_lib, colamd_lib, cxsparse_lib],
+        include_dirs=["/usr/local/include/", numpy.get_include()],
+        libraries=["ceres", "glog", "cholmod", "camd", "amd", "colamd", "cxsparse"],
+        library_dirs=[],
         extra_compile_args=extra_compile_args,
         extra_link_args=extra_link_args,
     )
