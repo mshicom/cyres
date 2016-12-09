@@ -4,7 +4,6 @@ from libcpp.string cimport string
 from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
 
 cdef extern from "types.h" namespace "ceres":
-    ctypedef short int16
     ctypedef int int32
     ctypedef enum Ownership:
         DO_NOT_TAKE_OWNERSHIP
@@ -437,7 +436,7 @@ cdef extern from "cost_function.h" namespace "ceres":
                       double* residuals,
                       double** jacobians) const
 
-        const vector[int16]& parameter_block_sizes() const
+        const vector[int32]& parameter_block_sizes() const
 
         int num_residuals() const
 

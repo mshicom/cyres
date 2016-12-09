@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from distutils.core import setup
 from Cython.Distutils import Extension
 from Cython.Distutils import build_ext
@@ -45,7 +47,7 @@ extra_compile_args = ['-O3']
 extra_link_args = []
 
 if has_openmp():
-    extra_compile_args = ['-fopenmp']
+    extra_compile_args = ['-fopenmp','-std=c++11','-Wunused']
     extra_link_args = ['-lgomp']
 
 ext_modules = [
