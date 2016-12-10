@@ -363,6 +363,17 @@ cdef class Problem:
         cdef double* _values = <double*> _tmp_array.data
         self._problem.SetParameterization(_values, lp._local_parameterization)
 
+    cpdef set_parameter_lower_bound(self, block, int index, double lower_bound):
+        cdef np.ndarray _tmp_array = np.ascontiguousarray(block, dtype=np.double)
+        cdef double* _values = <double*> _tmp_array.data
+        self._problem.SetParameterLowerBound(_values, index, lower_bound)
+
+    cpdef set_parameter_upper_bound(self, block, int index, double upper_bound):
+        cdef np.ndarray _tmp_array = np.ascontiguousarray(block, dtype=np.double)
+        cdef double* _values = <double*> _tmp_array.data
+        self._problem.SetParameterUpperBound(_values, index, upper_bound)
+
+
 cdef class ResidualBlockId:
     cdef ceres.ResidualBlockId _block_id
 
@@ -453,20 +464,20 @@ cdef class ProductParameterization(LocalParameterization):
         # TODO Sanity Check
         if len(args)==2:
             self._local_parameterization = new ceres.ProductParameterization(
-                (<LocalParameterization?>(args[0]))._local_parameterization,
-                (<LocalParameterization?>(args[1]))._local_parameterization)
+                (<LocalParameterization?>args[0])._local_parameterization,
+                (<LocalParameterization?>args[1])._local_parameterization)
 
         elif len(args)==3:
             self._local_parameterization = new ceres.ProductParameterization(
-                (<LocalParameterization?>(args[0]))._local_parameterization,
-                (<LocalParameterization?>(args[1]))._local_parameterization,
-                (<LocalParameterization?>(args[2]))._local_parameterization)
+                (<LocalParameterization?>args[0])._local_parameterization,
+                (<LocalParameterization?>args[1])._local_parameterization,
+                (<LocalParameterization?>args[2])._local_parameterization)
 
         elif len(args)==4:
             self._local_parameterization = new ceres.ProductParameterization(
-                (<LocalParameterization?>(args[0]))._local_parameterization,
-                (<LocalParameterization?>(args[1]))._local_parameterization,
-                (<LocalParameterization?>(args[2]))._local_parameterization,
-                (<LocalParameterization?>(args[3]))._local_parameterization)
+                (<LocalParameterization?>args[0])._local_parameterization,
+                (<LocalParameterization?>args[1])._local_parameterization,
+                (<LocalParameterization?>args[2])._local_parameterization,
+                (<LocalParameterization?>args[3])._local_parameterization)
         else:
             raise RuntimeError("number of sub parameterization should within 2~4.")

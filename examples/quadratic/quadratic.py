@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from cyres import *
 from cost_functions.wrappers import SimpleCostFunction
 

@@ -5,16 +5,16 @@ from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
 
 cdef extern from "ceres/types.h" namespace "ceres":
     ctypedef int int32
-    ctypedef enum Ownership:
+    enum Ownership:
         DO_NOT_TAKE_OWNERSHIP
         TAKE_OWNERSHIP
 
-    ctypedef enum MinimizerType:
+    enum MinimizerType:
         LINE_SEARCH
         TRUST_REGION
 
     # TODO(keir): Considerably expand the explanations of each solver type.
-    ctypedef enum LinearSolverType:
+    enum LinearSolverType:
       # These solvers are for general rectangular systems formed from the
       # normal equations A'A x = A'b. They are direct solvers and do not
       # assume any special problem structure.
@@ -50,7 +50,7 @@ cdef extern from "ceres/types.h" namespace "ceres":
       # Conjugate gradients on the normal equations.
       CGNR
 
-    ctypedef enum PreconditionerType:
+    enum PreconditionerType:
       # Trivial preconditioner - the identity matrix.
       IDENTITY
 
@@ -71,7 +71,7 @@ cdef extern from "ceres/types.h" namespace "ceres":
       CLUSTER_JACOBI
       CLUSTER_TRIDIAGONAL
 
-    ctypedef enum SparseLinearAlgebraLibraryType:
+    enum SparseLinearAlgebraLibraryType:
       # High performance sparse Cholesky factorization and approximate
       # minimum degree ordering.
       SUITE_SPARSE
@@ -79,7 +79,7 @@ cdef extern from "ceres/types.h" namespace "ceres":
       # A lightweight replacment for SuiteSparse.
       CX_SPARSE
 
-    ctypedef enum LinearSolverTerminationType:
+    enum LinearSolverTerminationType:
       # Termination criterion was met. For factorization based solvers
       # the tolerance is assumed to be zero. Any user provided values are
       # ignored.
@@ -100,11 +100,11 @@ cdef extern from "ceres/types.h" namespace "ceres":
 
     # Logging options
     # The options get progressively noisier.
-    ctypedef enum LoggingType:
+    enum LoggingType:
       SILENT
       PER_MINIMIZER_ITERATION
 
-    ctypedef enum LineSearchDirectionType:
+    enum LineSearchDirectionType:
         STEEPEST_DESCENT
 
         # A generalization of the Conjugate Gradient method to non-linear
@@ -134,19 +134,19 @@ cdef extern from "ceres/types.h" namespace "ceres":
     # leading to number of different rules for computing the search
     # direction. Ceres provides a number of different variants. For more
     # details see Numerical Optimization by Nocedal & Wright.
-    ctypedef enum NonlinearConjugateGradientType:
+    enum NonlinearConjugateGradientType:
         FLETCHER_REEVES
         POLAK_RIBIRERE
         HESTENES_STIEFEL
 
-    ctypedef enum LineSearchType:
+    enum LineSearchType:
         # Backtracking line search with polynomial interpolation or
         # bisection.
         ARMIJO
 
     # Ceres supports different strategies for computing the trust region
     # step.
-    ctypedef enum TrustRegionStrategyType:
+    enum TrustRegionStrategyType:
         # The default trust region strategy is to use the step computation
         # used in the Levenberg-Marquardt algorithm. For more details see
         # levenberg_marquardt_strategy.h
@@ -175,7 +175,7 @@ cdef extern from "ceres/types.h" namespace "ceres":
     # "Approximate solution of the trust region problem by minimization
     #  over two-dimensional subspaces", Mathematical Programming,
     # 40 (1988), pp. 247--263
-    ctypedef enum DoglegType:
+    enum DoglegType:
         # The traditional approach constructs a dogleg path
         # consisting of two line segments and finds the furthest
         # point on that path that is still inside the trust region.
@@ -185,7 +185,7 @@ cdef extern from "ceres/types.h" namespace "ceres":
         # constrained to the subspace spanned by the dogleg path.
         SUBSPACE_DOGLEG
 
-    ctypedef enum SolverTerminationType:
+    enum SolverTerminationType:
         # The minimizer did not run at all; usually due to errors in the user's
         # Problem or the solver options.
         DID_NOT_RUN
@@ -225,7 +225,7 @@ cdef extern from "ceres/types.h" namespace "ceres":
     # solver whether it should continue solving, the user detected an
     # error or the solution is good enough and the solver should
     # terminate.
-    ctypedef enum CallbackReturnType:
+    enum CallbackReturnType:
         # Continue solving to next iteration.
         SOLVER_CONTINUE
 
@@ -242,7 +242,7 @@ cdef extern from "ceres/types.h" namespace "ceres":
 
     # The format in which linear least squares problems should be logged
     # when Solver::Options::lsqp_iterations_to_dump is non-empty.
-    ctypedef enum DumpFormatType:
+    enum DumpFormatType:
         # Print the linear least squares problem in a human readable format
         # to stderr. The Jacobian is printed as a dense matrix. The vectors
         # D x and f are printed as dense vectors. This should only be used
@@ -269,16 +269,16 @@ cdef extern from "ceres/types.h" namespace "ceres":
     # For SizedCostFunction and AutoDiffCostFunction, DYNAMIC can be specified for
     # the number of residuals. If specified, then the number of residuas for that
     # cost function can vary at runtime.
-    ctypedef enum DimensionType:
+    enum DimensionType:
         DYNAMIC = -1
 
-    ctypedef enum NumericDiffMethod:
+    enum NumericDiffMethod:
         CENTRAL
         FORWARD
 
 
 cdef extern from "ceres/ordered_groups.h" namespace "ceres":
-    cdef cppclass OrderedGroups[T]:
+    cppclass OrderedGroups[T]:
         pass
     ctypedef OrderedGroups[double*] ParameterBlockOrdering
 
@@ -366,7 +366,7 @@ cdef extern from "ceres/iteration_callback.h" namespace "ceres":
         double cumulative_time_in_seconds
 
 
-    cdef cppclass IterationCallback:
+    cppclass IterationCallback:
         CallbackReturnType operator()(const IterationSummary& summary)
 
 cdef extern from "ceres/crs_matrix.h" namespace "ceres":
@@ -381,7 +381,7 @@ cdef extern from "ceres/crs_matrix.h" namespace "ceres":
         vector[double] values
 
 cdef extern from "ceres/local_parameterization.h" namespace "ceres":
-    cdef cppclass LocalParameterization:
+    cppclass LocalParameterization:
         bool Plus(const double* x,
                   const double* delta,
                   double* x_plus_delta) const
@@ -391,22 +391,22 @@ cdef extern from "ceres/local_parameterization.h" namespace "ceres":
 
         LocalSize() const
 
-    cdef cppclass IdentityParameterization(LocalParameterization):
+    cppclass IdentityParameterization(LocalParameterization):
         IdentityParameterization(int size)
 
-    cdef cppclass SubsetParameterization(LocalParameterization):
+    cppclass SubsetParameterization(LocalParameterization):
         SubsetParameterization(int size, const vector[int]& constant_parameters)
 
-    cdef cppclass QuaternionParameterization(LocalParameterization):
+    cppclass QuaternionParameterization(LocalParameterization):
         pass
 
-    cdef cppclass EigenQuaternionParameterization(LocalParameterization):
+    cppclass EigenQuaternionParameterization(LocalParameterization):
         pass
 
-    cdef cppclass HomogeneousVectorParameterization(LocalParameterization):
+    cppclass HomogeneousVectorParameterization(LocalParameterization):
         HomogeneousVectorParameterization(int size)
 
-    cdef cppclass ProductParameterization(LocalParameterization):
+    cppclass ProductParameterization(LocalParameterization):
         ProductParameterization(LocalParameterization* local_param1,
                                 LocalParameterization* local_param2)
 
@@ -421,45 +421,45 @@ cdef extern from "ceres/local_parameterization.h" namespace "ceres":
 
 cdef extern from "ceres/problem.h" namespace "ceres::internal":
 
-    cdef cppclass Preprocessor:
+    cppclass Preprocessor:
         pass
-    cdef cppclass ProblemImpl:
+    cppclass ProblemImpl:
         pass
-    cdef cppclass ParameterBlock:
+    cppclass ParameterBlock:
         pass
-    cdef cppclass ResidualBlock:
+    cppclass ResidualBlock:
         pass
 
 cdef extern from "ceres/loss_function.h" namespace "ceres":
 
-    cdef cppclass LossFunction:
+    cppclass LossFunction:
         void Evaluate(double sq_norm, double out[3]) const
 
-    cdef cppclass HuberLoss(LossFunction):
+    cppclass HuberLoss(LossFunction):
         HuberLoss(double _a)
 
-    cdef cppclass SoftLOneLoss(LossFunction):
+    cppclass SoftLOneLoss(LossFunction):
         SoftLOneLoss(double _a)
 
-    cdef cppclass CauchyLoss(LossFunction):
+    cppclass CauchyLoss(LossFunction):
         CauchyLoss(double _a)
 
-    cdef cppclass ArctanLoss(LossFunction):
+    cppclass ArctanLoss(LossFunction):
         ArctanLoss(double _a)
 
-    cdef cppclass TolerantLoss(LossFunction):
+    cppclass TolerantLoss(LossFunction):
          TolerantLoss(double _a, double _b)
 
-    cdef cppclass ComposedLoss(LossFunction):
+    cppclass ComposedLoss(LossFunction):
         ComposedLoss(const LossFunction* f, Ownership ownership_f,
                      const LossFunction* g, Ownership ownership_g)
 
-    cdef cppclass ScaledLoss(LossFunction):
+    cppclass ScaledLoss(LossFunction):
         ScaledLoss(const LossFunction* rho, double a, Ownership ownership)
 
 
 cdef extern from "ceres/cost_function.h" namespace "ceres":
-    cdef cppclass CostFunction:
+    cppclass CostFunction:
         bool Evaluate(double** parameters,
                       double* residuals,
                       double** jacobians) const
@@ -469,7 +469,7 @@ cdef extern from "ceres/cost_function.h" namespace "ceres":
         int num_residuals() const
 
 cdef extern from "ceres/solver.h" namespace "ceres::Solver":
-    cdef cppclass SolverOptions "ceres::Solver::Options":
+    cppclass SolverOptions "ceres::Solver::Options":
         MinimizerType minimizer_type
 
         LineSearchDirectionType line_search_direction_type
@@ -884,7 +884,7 @@ cdef extern from "ceres/solver.h" namespace "ceres::Solver":
         # recorded to this file.
         string solver_log
 
-    cdef cppclass Summary:
+    cppclass Summary:
         Summary()
 
         # A brief one line description of the state of the solver after
@@ -1013,7 +1013,7 @@ cdef extern from "ceres/problem.h" namespace "ceres":
 
     ctypedef ResidualBlock* ResidualBlockId
 
-    cdef cppclass Problem:
+    cppclass Problem:
 
         Problem()
         Problem(const ProblemOptions& options)
@@ -1080,6 +1080,9 @@ cdef extern from "ceres/problem.h" namespace "ceres":
 
         void SetParameterization(double* values,
                                 LocalParameterization* local_parameterization)
+
+        void SetParameterLowerBound(double *values, int index, double lower_bound)
+        void SetParameterUpperBound(double *values, int index, double upper_bound)
 
         int NumParameterBlocks() const
 
