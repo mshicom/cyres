@@ -4,6 +4,8 @@ import cython
 from libcpp.vector cimport vector
 from libc.stdlib cimport malloc, free
 from cython.operator cimport dereference as drf
+cimport cpython.ref as cpy_ref
+
 
 cimport numpy as np
 
@@ -238,68 +240,128 @@ cdef class SolverOptions:
         self._options = new ceres.SolverOptions()
 
     property max_num_iterations:
-        def __get__(self):
-            return self._options.max_num_iterations
-
-        def __set__(self, value):
-            self._options.max_num_iterations = value
+        def __get__(self):        return self._options.max_num_iterations
+        def __set__(self, value): self._options.max_num_iterations = value
 
     property minimizer_progress_to_stdout:
-        def __get__(self):
-            return self._options.minimizer_progress_to_stdout
-
-        def __set__(self, value):
-            self._options.minimizer_progress_to_stdout = value
+        def __get__(self):        return self._options.minimizer_progress_to_stdout
+        def __set__(self, value): self._options.minimizer_progress_to_stdout = value
 
     property linear_solver_type:
-        def __get__(self):
-            return self._options.linear_solver_type
-
-        def __set__(self, value):
-            self._options.linear_solver_type = value
+        def __get__(self):        return self._options.linear_solver_type
+        def __set__(self, value): self._options.linear_solver_type = value
 
     property trust_region_strategy_type:
-        def __get__(self):
-            return self._options.trust_region_strategy_type
-
-        def __set__(self, value):
-            self._options.trust_region_strategy_type = value
+        def __get__(self):        return self._options.trust_region_strategy_type
+        def __set__(self, value): self._options.trust_region_strategy_type = value
 
     property dogleg_type:
-        def __get__(self):
-            return self._options.dogleg_type
-
-        def __set__(self, value):
-            self._options.dogleg_type = value
+        def __get__(self):        return self._options.dogleg_type
+        def __set__(self, value): self._options.dogleg_type = value
 
     property preconditioner_type:
-        def __get__(self):
-            return self._options.preconditioner_type
-
-        def __set__(self, value):
-            self._options.preconditioner_type = value
+        def __get__(self):        return self._options.preconditioner_type
+        def __set__(self, value): self._options.preconditioner_type = value
 
     property num_threads:
-        def __get__(self):
-            return self._options.num_threads
-
-        def __set__(self, value):
-            self._options.num_threads = value
+        def __get__(self):        return self._options.num_threads
+        def __set__(self, value): self._options.num_threads = value
 
     property num_linear_solver_threads:
-        def __get__(self):
-            return self._options.num_linear_solver_threads
-
-        def __set__(self, value):
-            self._options.num_linear_solver_threads = value
+        def __get__(self):        return self._options.num_linear_solver_threads
+        def __set__(self, value): self._options.num_linear_solver_threads = value
 
     property use_nonmonotonic_steps:
-        def __get__(self):
-            return self._options.use_nonmonotonic_steps
+        def __get__(self):        return self._options.use_nonmonotonic_steps
+        def __set__(self, value): self._options.use_nonmonotonic_steps = value
 
-        def __set__(self, value):
-            self._options.use_nonmonotonic_steps = value
+    property gradient_tolerance:
+        def __get__(self):        return self._options.gradient_tolerance
+        def __set__(self, value): self._options.gradient_tolerance = value
 
+    property function_tolerance:
+        def __get__(self):        return self._options.function_tolerance
+        def __set__(self, value): self._options.function_tolerance = value
+
+    property parameter_tolerance:
+        def __get__(self):        return self._options.parameter_tolerance
+        def __set__(self, value): self._options.parameter_tolerance = value
+
+    def add_callback(self, callback):
+        self._options.callbacks.push_back((<IterationCallback?>callback)._ptr)
+
+
+cdef extern from "callback.h":
+    cppclass PythonCallback(ceres.IterationCallback):
+        PythonCallback(cpy_ref.PyObject* obj)
+        ceres.CallbackReturnType operator()(const ceres.IterationSummary& summary)
+
+cdef public api ceres.CallbackReturnType cy_callback(object obj, object summary):
+    ''' this will be used in cpp file'''
+    if not hasattr(obj, "__call__"):
+        raise RuntimeError("no call method defined")
+    ret = obj.__call__(summary)
+    return <ceres.CallbackReturnType>ret
+
+from collections import namedtuple
+IterationSummary = namedtuple('IterationSummary',
+                              ['iteration',
+                               'step_is_valid',
+                               'step_is_nonmonotonic',
+                               'step_is_successful',
+                               'cost',
+                               'cost_change',
+                               'gradient_max_norm',
+                               'step_norm',
+                               'relative_decrease',
+                               'trust_region_radius',
+                               'eta',
+                               'step_size',
+                               'line_search_function_evaluations',
+                               'linear_solver_iterations',
+                               'iteration_time_in_seconds',
+                               'step_solver_time_in_seconds',
+                               'cumulative_time_in_seconds'])
+
+cdef public api object cy_warpSummary(const ceres.IterationSummary& summary):
+    return IterationSummary(summary.iteration,
+                           summary.step_is_valid,
+                           summary.step_is_nonmonotonic,
+                           summary.step_is_successful,
+                           summary.cost,
+                           summary.cost_change,
+                           summary.gradient_max_norm,
+                           summary.step_norm,
+                           summary.relative_decrease,
+                           summary.trust_region_radius,
+                           summary.eta,
+                           summary.step_size,
+                           summary.line_search_function_evaluations,
+                           summary.linear_solver_iterations,
+                           summary.iteration_time_in_seconds,
+                           summary.step_solver_time_in_seconds,
+                           summary.cumulative_time_in_seconds)
+
+cdef class IterationCallback:
+    cdef ceres.IterationCallback* _ptr
+    def __cinit__(self, *args, **kw):
+        self._ptr = new PythonCallback(<cpy_ref.PyObject*>self)
+    def __dealloc__(self):
+        if self._ptr!=NULL:
+            del self._ptr
+    def __call__(self, summary):
+#        print summary
+        return CallbackReturnType.SOLVER_CONTINUE
+
+class SimpleCallback(IterationCallback):
+    def __init__(self, callable_object):
+        super().__init__(self)
+        if not callable(callable_object):
+            raise RuntimeError("not callable")
+        self.func =  callable_object
+    def __call__(self, summary):
+        self.func()
+        return CallbackReturnType.SOLVER_CONTINUE
 cdef class Problem:
     cdef ceres.Problem _problem
 
