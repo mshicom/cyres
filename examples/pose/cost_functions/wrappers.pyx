@@ -22,10 +22,18 @@ cdef class SimilarityCost(CostFunction):
     def __cinit__(self):
         self._cost_function = _SimilarityCost.create()
 
+cdef class TestCostFunctor(CostFunction):
+    def __cinit__(self, SE3 T_aw):
+        self._cost_function = _TestCostFunctor.create(T_aw.ptr_[0])
+
 cdef extern from "cost_functions.h":
     cppclass _SimilarityCost "SimilarityCost"(ceres.CostFunction):
         @staticmethod
         ceres.CostFunction* create()
+
+    cppclass _TestCostFunctor "TestCostFunctor"(ceres.CostFunction):
+        @staticmethod
+        ceres.CostFunction* create(SE3d T_aw)
 
     cppclass _LocalParameterizationSE3 "LocalParameterizationSE3"(ceres.LocalParameterization):
         pass

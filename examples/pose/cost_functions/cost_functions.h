@@ -68,3 +68,23 @@ struct SimilarityCost {
   }
 };
 
+struct TestCostFunctor {
+  TestCostFunctor(Sophus::SE3d T_aw) : T_aw(T_aw) {}
+
+  template <typename T>
+  bool operator()(const T* const sT_wa, T* sResiduals) const {
+    const Eigen::Map<const Sophus::SE3Group<T> > T_wa(sT_wa);
+    Eigen::Map<Eigen::Matrix<T, 6, 1> > residuals(sResiduals);
+
+    residuals = (T_aw.cast<T>() * T_wa).log();
+    return true;
+  }
+
+  Sophus::SE3d T_aw;
+
+  static ceres::CostFunction* create(Sophus::SE3d T_aw) {
+    return new ceres::AutoDiffCostFunction<TestCostFunctor, 6, 7>(new TestCostFunctor(T_aw));
+  }
+
+};
+
