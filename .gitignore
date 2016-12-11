@@ -42,3 +42,5 @@ nosetests.xml
 
 # Example wrapper .cpp files
 examples/*/cost_functions/wrappers.cpp
+
+**/.fuse_hidden*

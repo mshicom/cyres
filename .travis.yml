@@ -1,0 +1,35 @@
+language: python
+python:
+  - "2.7"
+dist: trusty
+sudo: required
+
+# command to install dependencies
+install: 
+  - sudo apt-get update
+  - sudo apt-get -y install libgoogle-glog-dev libatlas-base-dev libeigen3-dev
+  - sudo apt-get -y install libsuitesparse-dev
+  - git clone https://ceres-solver.googlesource.com/ceres-solver
+  - cd ceres-solver
+  - mkdir ceres-bin
+  - cd ceres-bin
+  - cmake .. -DBUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF 
+  - sudo make install
+  - cd ../../
+  - pip install cython
+  - pip install numpy
+  - python ./setup.py install
+  - cd examples/quadratic
+  - python ./setup.py build_ext -i -f
+
+script: 
+  - python quadratic.py
+branches:
+  only:
+    - master
+cache: 
+  pip: true
+  directories:
+    $HOME/travis/build/mshicom/cyres/ceres-solver
+
+

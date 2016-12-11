@@ -2,13 +2,14 @@
 # -*- coding: utf-8 -*-
 from cyres import *
 from cost_functions.wrappers import SimpleCostFunction
+import numpy as np
 
 iter_cnt = [0]
 def foo():
     iter_cnt[0] += 1
     print iter_cnt[0]
 
-x = np.array([105.])
+x = np.array([5.])
 problem = Problem()
 problem.add_residual_block(SimpleCostFunction(), SquaredLoss(), x)
 
@@ -25,3 +26,4 @@ solve(options, problem, summary)
 print summary.briefReport()
 print summary.fullReport()
 print x
+assert(np.isclose(x[0],10))
