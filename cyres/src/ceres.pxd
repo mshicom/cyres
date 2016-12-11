@@ -1098,6 +1098,8 @@ cdef extern from "ceres/problem.h" namespace "ceres":
 
         void GetParameterBlocks(vector[double*]* parameter_blocks) const
 
+        void GetResidualBlocks(vector[ResidualBlockId]* residual_blocks) const
+
         bool Evaluate(const EvaluateOptions& options,
                         double* cost,
                         vector[double]* residuals,

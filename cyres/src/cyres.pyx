@@ -333,7 +333,7 @@ cdef public api object cy_warpSummary(const ceres.IterationSummary& summary):
 
 cdef class IterationCallback:
     cdef ceres.IterationCallback* _ptr
-    def __cinit__(self, *args, **kw):
+    def __init__(self, *args, **kw):
         self._ptr = new PythonCallback(<cpy_ref.PyObject*>self)
     def __dealloc__(self):
         if self._ptr!=NULL:
@@ -352,16 +352,20 @@ class SimpleCallback(IterationCallback):
         self.func()
         return CallbackReturnType.SOLVER_CONTINUE
 
-""" This function will get the raw pointer of a numpy array that:
-        1. can be of any shape,
-        2. but with the type of double and
-        3. being c-continous (after flattened if more than 1D)
-    If requirements are not fullfilled then an Exception will be raised.
-    It uses cython memoryview to do the checking.
+"""
+This function will get the raw pointer of a numpy array that:
+    1. can be of any shape,
+    2. but with the type of double and
+    3. being c-continous (after flattened if more than 1D)
+If requirements are not fullfilled then an Exception will be raised.
+It uses cython memoryview to do the checking.
 """
 cdef double* getDoublePtr(object param):
     cdef double[::1] data = (<np.ndarray?>param).reshape(-1)
     return <double*>(&data[0])
+
+cdef object Mat1DFromPtr(double* ptr, int size):
+    return np.asarray(<double[:size]> ptr)
 
 cdef class Problem:
     cdef ceres.Problem* _problem
@@ -399,34 +403,56 @@ cdef class Problem:
 
         options = EvaluateOptions()
         options.apply_loss_function = apply_loss_function
-        options.residual_blocks = residual_blocks
+        options.residual_blocks = residual_blocks # coversion is done in EvaluateOptions
 
         self._problem.Evaluate(options._options, &cost, NULL, NULL, NULL)
         return cost
 
-    def set_parameter_block_constant(self, block):
+    def set_parameter_block_constant(self, np.ndarray block):
         self._problem.SetParameterBlockConstant(getDoublePtr(block))
 
-    def set_parameter_block_variable(self, block):
+    def set_parameter_block_variable(self, np.ndarray block):
         self._problem.SetParameterBlockVariable(getDoublePtr(block))
 
-    def add_parameter_block(self, block, int size, LocalParameterization lp=None):
+    def add_parameter_block(self, np.ndarray block, int size, LocalParameterization lp=None):
         if lp is None:
             self._problem.AddParameterBlock(getDoublePtr(block), size)
         else:
             self._problem.AddParameterBlock(getDoublePtr(block), size,
                                             lp._local_parameterization)
 
-    def set_parameterization(self, block, LocalParameterization lp):
+    def set_parameterization(self, np.ndarray block, LocalParameterization lp):
         self._problem.SetParameterization(getDoublePtr(block),
                                           lp._local_parameterization)
 
-    def set_parameter_lower_bound(self, block, int index, double lower_bound):
+    def set_parameter_lower_bound(self, np.ndarray block, int index, double lower_bound):
         self._problem.SetParameterLowerBound(getDoublePtr(block), index, lower_bound)
 
-    def set_parameter_upper_bound(self, block, int index, double upper_bound):
+    def set_parameter_upper_bound(self, np.ndarray block, int index, double upper_bound):
         self._problem.SetParameterUpperBound(getDoublePtr(block), index, upper_bound)
 
+    cpdef get_parameter_blocks(self):
+        cdef vector[double*] parameter_blocks
+        cdef double* data_ptr
+        self._problem.GetParameterBlocks(&parameter_blocks)
+        return [Mat1DFromPtr(data_ptr, self._problem.ParameterBlockSize(data_ptr)) for data_ptr in parameter_blocks]
+
+    cpdef get_residual_blocks(self):
+        cdef vector[ceres.ResidualBlockId] residual_blocks
+        self._problem.GetResidualBlocks(&residual_blocks)
+        return [warpResidualBlockId(blockid) for blockid in residual_blocks]
+
+    def NumParameterBlocks(self):
+        return self._problem.NumParameterBlocks()
+
+    def NumParameters(self):
+        return self._problem.NumParameters()
+
+    def NumResidualBlocks(self):
+        return self._problem.NumResidualBlocks()
+
+    def NumResiduals(self):
+        return self._problem.NumResiduals()
 
 cdef class ResidualBlockId:
     cdef ceres.ResidualBlockId _block_id
