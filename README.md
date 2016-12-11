@@ -1,6 +1,6 @@
 cyres
 =====
-Python bindings for ceres-solver (via Cython)
+Python bindings for ceres-solver (via Cython)![Alt](https://travis-ci.org/mshicom/cyres.svg?branch=master "CI")
 ##How to use
 Suppose you have already installed the ceres in /usr/local.
 Now first build &  install the main library:
