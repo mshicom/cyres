@@ -364,10 +364,19 @@ cdef double* getDoublePtr(object param):
     return <double*>(&data[0])
 
 cdef class Problem:
-    cdef ceres.Problem _problem
+    cdef ceres.Problem* _problem
 
-    def __cinit__(self):
-        pass
+    def __init__(self):
+        # modified the default options, let python do the management
+        cdef ceres.ProblemOptions option
+        option.cost_function_ownership = Ownership.DO_NOT_TAKE_OWNERSHIP
+        option.loss_function_ownership = Ownership.DO_NOT_TAKE_OWNERSHIP
+        option.local_parameterization_ownership = Ownership.DO_NOT_TAKE_OWNERSHIP
+        self._problem = new ceres.Problem(option)
+
+    def __dealloc__(self):
+        if self._problem != NULL:
+            del self._problem
 
     # loss_function=NULL yields squared loss
     def add_residual_block(self,
@@ -428,7 +437,7 @@ cdef object warpResidualBlockId(ceres.ResidualBlockId id_):
         return RBid
 
 def solve(SolverOptions options, Problem problem, Summary summary):
-    ceres.Solve(drf(options._options), &problem._problem, &summary._summary)
+    ceres.Solve(drf(options._options), problem._problem, &summary._summary)
 
 cdef class IdentityParameterization(LocalParameterization):
     """ Identity Parameterization: Plus(x, delta) = x + delta"""
