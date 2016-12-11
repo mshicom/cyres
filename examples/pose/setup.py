@@ -12,7 +12,7 @@ ext_modules = [
     Extension(
         "wrappers",
         sources = ["cost_functions/wrappers.pyx"],
-        define_macros=[('EIGEN_DEFAULT_TO_ROW_MAJOR', '1')],
+#        define_macros=[('EIGEN_DEFAULT_TO_ROW_MAJOR', '1')],
         language="c++",
         include_dirs=["/usr/include/eigen3", "./Sophus/", numpy.get_include()]
                         + eigency.get_includes(include_eigen=False),
