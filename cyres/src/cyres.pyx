@@ -177,7 +177,6 @@ cdef class TolerantLoss(LossFunction):
         self._loss_function = new ceres.TolerantLoss(_a, _b)
 
 cdef class ComposedLoss(LossFunction):
-
     def __init__(self, LossFunction f, LossFunction g):
         self._loss_function = new ceres.ComposedLoss(f._loss_function,
                                                      ceres.DO_NOT_TAKE_OWNERSHIP,
@@ -185,7 +184,6 @@ cdef class ComposedLoss(LossFunction):
                                                      ceres.DO_NOT_TAKE_OWNERSHIP)
 
 cdef class ScaledLoss(LossFunction):
-
     def __init__(self, LossFunction loss_function, double _a):
         self._loss_function = new ceres.ScaledLoss(loss_function._loss_function,
                                                    _a,
@@ -211,24 +209,15 @@ cdef class EvaluateOptions:
 
     property residual_blocks:
         def __get__(self):
-            blocks = []
-            cdef int i
-            for i in range(self._options.residual_blocks.size()):
-                block = ResidualBlockId()
-                block._block_id = self._options.residual_blocks[i]
-                blocks.append(block)
-            return blocks
+            return [warpResidualBlockId(block) for block in self._options.residual_blocks]
         def __set__(self, blocks):
             self._options.residual_blocks.clear()
-            cdef ResidualBlockId block
             for block in blocks:
-                self._options.residual_blocks.push_back(block._block_id)
+                self._options.residual_blocks.push_back((<ResidualBlockId?>block)._block_id)
 
     property apply_loss_function:
-        def __get__(self):
-            return self._options.apply_loss_function
-        def __set__(self, value):
-            self._options.apply_loss_function = value
+        def __get__(self):        return self._options.apply_loss_function
+        def __set__(self, value): self._options.apply_loss_function = value
 
 cdef class SolverOptions:
     cdef ceres.SolverOptions* _options
@@ -362,6 +351,18 @@ class SimpleCallback(IterationCallback):
     def __call__(self, summary):
         self.func()
         return CallbackReturnType.SOLVER_CONTINUE
+
+""" This function will get the raw pointer of a numpy array that:
+        1. can be of any shape,
+        2. but with the type of double and
+        3. being c-continous (after flattened if more than 1D)
+    If requirements are not fullfilled then an Exception will be raised.
+    It uses cython memoryview to do the checking.
+"""
+cdef double* getDoublePtr(object param):
+    cdef double[::1] data = (<np.ndarray?>param).reshape(-1)
+    return <double*>(&data[0])
+
 cdef class Problem:
     cdef ceres.Problem _problem
 
@@ -369,29 +370,22 @@ cdef class Problem:
         pass
 
     # loss_function=NULL yields squared loss
-    cpdef add_residual_block(self,
+    def add_residual_block(self,
                            CostFunction cost_function,
                            LossFunction loss_function,
-                           parameter_blocks=[]):
-
-        cdef np.ndarray _tmp_array
+                           *parameter_blocks):
         cdef vector[double*] _parameter_blocks
-        cdef double f
-
         cdef ceres.ResidualBlockId _block_id
 
         for parameter_block in parameter_blocks:
-            _tmp_array = np.ascontiguousarray(parameter_block, dtype=np.double)
-            _parameter_blocks.push_back(<double*> _tmp_array.data)
+            _parameter_blocks.push_back(getDoublePtr(parameter_block))
+
         _block_id = self._problem.AddResidualBlock(cost_function._cost_function,
                                                    loss_function._loss_function,
                                                    _parameter_blocks)
-        block_id = ResidualBlockId()
-        block_id._block_id = _block_id
-        return block_id
+        return warpResidualBlockId(_block_id)
 
-    cpdef evaluate(self, residual_blocks, apply_loss_function=True):
-
+    def evaluate(self, residual_blocks, apply_loss_function=True):
         cdef double cost
 
         options = EvaluateOptions()
@@ -401,43 +395,37 @@ cdef class Problem:
         self._problem.Evaluate(options._options, &cost, NULL, NULL, NULL)
         return cost
 
-    cpdef set_parameter_block_constant(self, block):
-        cdef np.ndarray _tmp_array = np.ascontiguousarray(block, dtype=np.double)
-        cdef double* _values = <double*> _tmp_array.data
-        self._problem.SetParameterBlockConstant(_values)
+    def set_parameter_block_constant(self, block):
+        self._problem.SetParameterBlockConstant(getDoublePtr(block))
 
-    cpdef set_parameter_block_variable(self, block):
-        cdef np.ndarray _tmp_array = np.ascontiguousarray(block, dtype=np.double)
-        cdef double* _values = <double*> _tmp_array.data
-        self._problem.SetParameterBlockVariable(_values)
+    def set_parameter_block_variable(self, block):
+        self._problem.SetParameterBlockVariable(getDoublePtr(block))
 
-    cpdef add_parameter_block(self, block, LocalParameterization lp=None):
-        cdef np.ndarray _tmp_array = np.ascontiguousarray(block, dtype=np.double)
-        cdef double* _values = <double*> _tmp_array.data
-        if not lp is None:
-            self._problem.AddParameterBlock(_values, len(block))
+    def add_parameter_block(self, block, int size, LocalParameterization lp=None):
+        if lp is None:
+            self._problem.AddParameterBlock(getDoublePtr(block), size)
         else:
-            self._problem.AddParameterBlock(_values, len(block),
+            self._problem.AddParameterBlock(getDoublePtr(block), size,
                                             lp._local_parameterization)
 
-    cpdef set_parameterization(self, block, LocalParameterization lp):
-        cdef np.ndarray _tmp_array = np.ascontiguousarray(block, dtype=np.double)
-        cdef double* _values = <double*> _tmp_array.data
-        self._problem.SetParameterization(_values, lp._local_parameterization)
+    def set_parameterization(self, block, LocalParameterization lp):
+        self._problem.SetParameterization(getDoublePtr(block),
+                                          lp._local_parameterization)
 
-    cpdef set_parameter_lower_bound(self, block, int index, double lower_bound):
-        cdef np.ndarray _tmp_array = np.ascontiguousarray(block, dtype=np.double)
-        cdef double* _values = <double*> _tmp_array.data
-        self._problem.SetParameterLowerBound(_values, index, lower_bound)
+    def set_parameter_lower_bound(self, block, int index, double lower_bound):
+        self._problem.SetParameterLowerBound(getDoublePtr(block), index, lower_bound)
 
-    cpdef set_parameter_upper_bound(self, block, int index, double upper_bound):
-        cdef np.ndarray _tmp_array = np.ascontiguousarray(block, dtype=np.double)
-        cdef double* _values = <double*> _tmp_array.data
-        self._problem.SetParameterUpperBound(_values, index, upper_bound)
+    def set_parameter_upper_bound(self, block, int index, double upper_bound):
+        self._problem.SetParameterUpperBound(getDoublePtr(block), index, upper_bound)
 
 
 cdef class ResidualBlockId:
     cdef ceres.ResidualBlockId _block_id
+
+cdef object warpResidualBlockId(ceres.ResidualBlockId id_):
+        RBid = ResidualBlockId()
+        RBid._block_id = id_
+        return RBid
 
 def solve(SolverOptions options, Problem problem, Summary summary):
     ceres.Solve(drf(options._options), &problem._problem, &summary._summary)
@@ -543,3 +531,4 @@ cdef class ProductParameterization(LocalParameterization):
                 (<LocalParameterization?>args[3])._local_parameterization)
         else:
             raise RuntimeError("number of sub parameterization should within 2~4.")
+

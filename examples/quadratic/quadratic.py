@@ -10,7 +10,7 @@ def foo():
 
 x = np.array([105.])
 problem = Problem()
-problem.add_residual_block(SimpleCostFunction(), SquaredLoss(), [x])
+problem.add_residual_block(SimpleCostFunction(), SquaredLoss(), x)
 
 options = SolverOptions()
 options.max_num_iterations = 50

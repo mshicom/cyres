@@ -365,7 +365,6 @@ cdef extern from "ceres/iteration_callback.h" namespace "ceres":
         # Time (in seconds) since the user called Solve().
         double cumulative_time_in_seconds
 
-
     cppclass IterationCallback:
         CallbackReturnType operator()(const IterationSummary& summary)
 
@@ -989,9 +988,10 @@ cdef extern from "ceres/solver.h" namespace "ceres":
                 Problem* problem,
                 Summary* summary)
 
-cdef extern from "ceres/problem.h" namespace "ceres::Problem":
-
+cdef extern from "ceres/problem.h" namespace "ceres":
     ctypedef ResidualBlock* ResidualBlockId
+
+cdef extern from "ceres/problem.h" namespace "ceres::Problem":
 
     ctypedef struct ProblemOptions "ceres::Problem::Options":
         ProblemOptions()
