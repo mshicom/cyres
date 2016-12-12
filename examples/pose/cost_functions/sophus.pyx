@@ -52,6 +52,13 @@ cdef extern from "sophus/se3.hpp" namespace "Sophus":
         PlainObjectBase matrix3x4() const
         PlainObjectBase rotationMatrix() const
         PlainObjectBase translation()
+        @staticmethod
+        SE3d exp(const Vector6d& a)
+
+    cppclass Vector6d(PlainObjectBase):
+        pass
+    cppclass Matrix6d(PlainObjectBase):
+        pass
 
 cdef extern from "sophus/se3.hpp" namespace "Eigen":
     cppclass SE3Map "Map<Sophus::SE3d>"(SE3d):
@@ -138,6 +145,11 @@ cdef class SE3:
             return T_
         else:
             return None
+
+    @staticmethod
+    def exp(np.ndarray vec6):
+        return warpSE3dResult(SE3d.exp(<Vector6d>Map[Vector6d](vec6)))
+
 
 cdef warpSE3dResult(const SE3d &obj):
     ret = SE3(isSelfOwned=True)
