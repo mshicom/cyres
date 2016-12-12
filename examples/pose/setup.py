@@ -8,16 +8,26 @@ import numpy
 import cyres
 import eigency
 
+include_dirs = ["/usr/include/eigen3", numpy.get_include()]
+libraries = ["ceres", "glog","cholmod","lapack","gomp"]
 ext_modules = [
+    Extension(
+        "sophus",
+        sources = ["cost_functions/sophus.pyx"],
+        language="c++",
+        include_dirs= include_dirs + eigency.get_includes(include_eigen=False),
+        cython_include_dirs=[cyres.get_cython_include()],
+        libraries = libraries,
+        extra_compile_args = ["-std=c++11"]
+    ),
+
     Extension(
         "wrappers",
         sources = ["cost_functions/wrappers.pyx"],
-#        define_macros=[('EIGEN_DEFAULT_TO_ROW_MAJOR', '1')],
         language="c++",
-        include_dirs=["/usr/include/eigen3", "./Sophus/", numpy.get_include()]
-                        + eigency.get_includes(include_eigen=False),
+        include_dirs= include_dirs,
         cython_include_dirs=[cyres.get_cython_include()],
-        libraries = ["ceres", "glog","cholmod","lapack","gomp"],
+        libraries = libraries,
         extra_compile_args = ["-std=c++11"]
     )
 ]

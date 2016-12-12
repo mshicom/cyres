@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from cyres import *
-from cost_functions.wrappers import LocalParameterizationSE3, SimilarityCost, SE3
+from cost_functions import *
 import numpy as np
 import matplotlib.pyplot as plt
 
