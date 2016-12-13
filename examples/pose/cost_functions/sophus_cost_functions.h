@@ -1,6 +1,8 @@
 #include "ceres/ceres.h"
 #include "Eigen/Eigen"
-#define SOPHUS_CERES_FOUND
+#ifndef SOPHUS_CERES_FOUND
+    #define SOPHUS_CERES_FOUND
+#endif
 #include "sophus/se3.hpp"
 
 class LocalParameterizationSE3 : public ceres::LocalParameterization {
