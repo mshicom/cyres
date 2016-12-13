@@ -56,6 +56,19 @@ plotTrajectory([p.matrix() for p in trj_cam], 'cam')
 
 #%%
 oTc_est = SE3.create(np.eye(4))
+
+problem = Problem()
+problem.add_parameter_block(oTc_est.data, 7, LocalParameterizationSE3())
+
+for move_odo, move_cam in zip(trj_odo, trj_cam):
+    problem.add_residual_block(AdjointMotionCost(move_odo, move_cam),
+                               SquaredLoss(),  oTc_est.data)
+
+
+
+
+#%%
+oTc_est = SE3.create(np.eye(4))
 scale_est = np.array([1],'d')
 
 problem = Problem()

@@ -60,3 +60,35 @@ struct TestCostFunctor {
 
 };
 
+template<typename Scalar = double>
+inline Eigen::Matrix<Scalar, 6, 1> log_decoupled(
+    const Sophus::SE3Group<Scalar>& a, const Sophus::SE3Group<Scalar>& b) {
+  Eigen::Matrix<Scalar, 6, 1> res;
+  res.template head<3>() = a.translation() - b.translation();
+  res.template tail<3>() = (a.so3() * b.so3().inverse()).log();
+  return res;
+}
+
+struct AdjointMotionCost {
+  AdjointMotionCost(const Sophus::SE3d& x, const Sophus::SE3d& y)
+      : x_(x), y_(y)  {}
+
+  template <typename T>
+  bool operator()(const T* const xTy_s, T* sResiduals) const {
+    const Eigen::Map<const Sophus::SE3Group<T>> xTy(xTy_s);
+    Eigen::Map<Eigen::Matrix<T, 6, 1>> residuals(sResiduals);
+
+    const Sophus::SE3Group<T> x_est = xTy * y_.cast<T>() * xTy.inverse();
+
+//    residuals = (x_inverse_.cast<T>() * x_est).log();
+    residuals = log_decoupled(x_est, x_.cast<T>());
+    return true;
+  }
+
+  static ceres::CostFunction* create(const Sophus::SE3d& x, const Sophus::SE3d& y) {
+    return new ceres::AutoDiffCostFunction<AdjointMotionCost, 6, 7>(new AdjointMotionCost(x, y));
+  }
+  protected:
+    Sophus::SE3d x_;
+    Sophus::SE3d y_;
+};

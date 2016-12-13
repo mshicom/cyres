@@ -15,23 +15,6 @@ cdef double* getDoublePtr(object param):
 cdef object Mat1DFromPtr(double* ptr, int size):
     return np.asarray(<double[:size]> ptr)
 
-cdef class LocalParameterizationSE3(LocalParameterization):
-    def __cinit__(self):
-        self._local_parameterization = new _LocalParameterizationSE3()
-
-cdef class TestCostFunctor(CostFunction):
-    def __cinit__(self, SE3 T_aw):
-        self._cost_function = _TestCostFunctor.create(T_aw.ptr_[0])
-
-cdef extern from "sophus_cost_functions.h":
-    cppclass _TestCostFunctor "TestCostFunctor"(ceres.CostFunction):
-        @staticmethod
-        ceres.CostFunction* create(SE3d T_aw)
-
-    cppclass _LocalParameterizationSE3 "LocalParameterizationSE3"(ceres.LocalParameterization):
-        pass
-
-
 cdef extern from "sophus/se3.hpp" namespace "Sophus":
     cppclass SE3d:
         SE3d()
@@ -156,3 +139,27 @@ cdef warpSE3dResult(const SE3d &obj):
     ret.ptr_ = new SE3d(obj)
     return ret
 
+
+cdef class LocalParameterizationSE3(LocalParameterization):
+    def __cinit__(self):
+        self._local_parameterization = new _LocalParameterizationSE3()
+
+cdef class TestCostFunctor(CostFunction):
+    def __cinit__(self, SE3 T_aw):
+        self._cost_function = _TestCostFunctor.create(T_aw.ptr_[0])
+
+cdef class AdjointMotionCost(CostFunction):
+    def __init__(self, SE3 x, SE3 y):
+        self._cost_function = _AdjointMotionCost.create(deref(x.ptr_), deref(y.ptr_))
+
+cdef extern from "sophus_cost_functions.h":
+    cppclass _TestCostFunctor "TestCostFunctor"(ceres.CostFunction):
+        @staticmethod
+        ceres.CostFunction* create(SE3d T_aw)
+
+    cppclass _LocalParameterizationSE3 "LocalParameterizationSE3"(ceres.LocalParameterization):
+        pass
+
+    cppclass _AdjointMotionCost "AdjointMotionCost"(ceres.CostFunction):
+        @staticmethod
+        ceres.CostFunction* create(SE3d &x, SE3d &y)
