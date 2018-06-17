@@ -22,7 +22,7 @@ def has_openmp():
     os.chdir(tmpdir)
 
     filename = r'test.c'
-    file = open(filename,'w', 0)
+    file = open(filename,'w')
     file.write(omp_test)
     with open(os.devnull, 'w') as fnull:
         result = subprocess.call(['cc', '-fopenmp', filename], stdout=fnull,
@@ -51,8 +51,8 @@ ext_modules = [
         include_dirs=["/usr/local/include/", numpy.get_include()],
         libraries=["ceres", "glog", "cholmod", "camd", "amd", "colamd", "cxsparse"],
         library_dirs=[],
-        extra_compile_args=extra_compile_args,
-        extra_link_args=extra_link_args,
+        extra_compile_args=['-O3','-std=c++11','-Wunused', '-fopenmp'],
+        extra_link_args=['-fopenmp'],
     )
 ]
 

@@ -7,7 +7,7 @@ import numpy as np
 iter_cnt = [0]
 def foo():
     iter_cnt[0] += 1
-    print iter_cnt[0]
+    print(iter_cnt[0])
 
 x = np.array([5.])
 problem = Problem()
@@ -23,7 +23,7 @@ options.add_callback(SimpleCallback(foo))
 summary = Summary()
 
 solve(options, problem, summary)
-print summary.briefReport()
-print summary.fullReport()
-print x
+print( summary.briefReport())
+print( summary.fullReport())
+print( x)
 assert(np.isclose(x[0],10))

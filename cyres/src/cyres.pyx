@@ -256,9 +256,9 @@ cdef class SolverOptions:
         def __get__(self):        return self._options.num_threads
         def __set__(self, value): self._options.num_threads = value
 
-    property num_linear_solver_threads:
-        def __get__(self):        return self._options.num_linear_solver_threads
-        def __set__(self, value): self._options.num_linear_solver_threads = value
+#    property num_linear_solver_threads:
+#        def __get__(self):        return self._options.num_linear_solver_threads
+#        def __set__(self, value): self._options.num_linear_solver_threads = value
 
     property use_nonmonotonic_steps:
         def __get__(self):        return self._options.use_nonmonotonic_steps

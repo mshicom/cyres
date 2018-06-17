@@ -1,4 +1,4 @@
-from cyres import *
+from cyres.cyres import *
 
 def get_cython_include():
     import os
