@@ -44,15 +44,16 @@ pose_odo = np.eye(4)
 pose_cam = pose_odo.dot(oTc)
 trj_odo, trj_cam = [SE3.create(pose_odo)], [SE3.create(pose_cam)]
 for i in range(100):
-    movement_odo = translate(rand_range(0, 0.1), 0, 0).dot(rotateZ(pi/180*rand_range(-10, 10)))
+    movement_odo = translate(rand_range(0, 0.1), rand_range(0, 0.1), rand_range(0, 0.1)).dot(rotateZ(pi/180*rand_range(-10, 10)))
     movement_cam = cTo.dot(movement_odo).dot(oTc)
-    pose_odo = pose_odo.dot(movement_odo)
-    pose_cam = pose_cam.dot(movement_cam)
-    trj_odo.append(SE3.create(pose_odo))
-    trj_cam.append(SE3.create(pose_cam))
+#    pose_odo = pose_odo.dot(movement_odo)
+#    pose_cam = pose_cam.dot(movement_cam)
+    trj_odo.append(SE3.create(movement_odo))
+    trj_cam.append(SE3.create(movement_cam))
 
 plotTrajectory([p.matrix() for p in trj_odo], 'odo')
 plotTrajectory([p.matrix() for p in trj_cam], 'cam')
+
 
 #%%
 oTc_est = SE3.create(np.eye(4))
@@ -91,13 +92,13 @@ for i in range(len(trj_odo)):
 options = SolverOptions()
 options.max_num_iterations = 50
 options.linear_solver_type = LinearSolverType.DENSE_QR
-options.minimizer_progress_to_stdout = False
+options.minimizer_progress_to_stdout = True
 
 summary = Summary()
 
 solve(options, problem, summary)
 print summary.briefReport()
 print oTc_est.matrix()
-print scale_est
+#print scale_est
 print oTc
 
